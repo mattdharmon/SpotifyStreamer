@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:padding="@dimen/activity_vertical_margin"
+    android:weightSum="1">
+
+    <ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+        style="@style/list_thumbnail"
+        android:id="@+id/list_item_album_imageview"
+        android:contentDescription="@string/artists_image_view_description"
+        android:layout_centerVertical="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+        style="@style/list_title_items"
+        android:id="@+id/list_item_album_textview"
+        android:textAlignment="center"
+        android:layout_toRightOf="@+id/list_item_album_imageview"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="false"
+        android:layout_alignTop="@+id/list_item_album_imageview"
+        android:gravity="bottom" />
+
+    <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+        style="@style/list_title_items"
+        android:id="@+id/list_item_track_textview"
+        android:layout_gravity="center_vertical"
+        android:textAlignment="center"
+        android:layout_alignWithParentIfMissing="false"
+        android:gravity="top"
+        android:layout_centerVertical="true"
+        android:layout_toRightOf="@+id/list_item_album_imageview"
+        android:layout_alignRight="@+id/list_item_album_textview"
+        android:layout_alignEnd="@+id/list_item_album_textview" />
+
+
+</RelativeLayout>
