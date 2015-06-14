@@ -46,6 +46,15 @@ public class TracksAdapter extends ArrayAdapter<Track> {
         if (track.album.images.isEmpty()) {
             return view;
         }
+        // Replace the image with a place holder if images array is empty.
+        if (track.album.images.isEmpty()) {
+            Integer imageUrl = R.drawable.no_picture;
+            Picasso.with(getContext())
+                    .load(imageUrl)
+                    .fit()
+                    .into(viewHolder.ivAlbum);
+            return view;
+        }
 
         // Get the image of the album.
         String imageUrl = track

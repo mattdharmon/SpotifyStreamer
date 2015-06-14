@@ -44,13 +44,18 @@ public class ArtistsAdapter extends ArrayAdapter<Artist> {
         viewHolder.text
             .setText(artist.name);
 
+        // Replace the image with a place holder if images array is empty.
         if (artist.images.isEmpty()) {
+            Integer imageUrl = R.drawable.no_picture;
+            Picasso.with(getContext())
+                    .load(imageUrl)
+                    .fit()
+                    .into(viewHolder.image);
             return view;
         }
 
-        // Grab the image url.
-        String imageUrl = artist
-            .images
+        // Use the first Picture of the albums.
+        String imageUrl = artist.images
             .get(0)
             .url;
 
