@@ -46,9 +46,8 @@ public class ArtistsAdapter extends ArrayAdapter<Artist> {
 
         // Replace the image with a place holder if images array is empty.
         if (artist.images.isEmpty()) {
-            Integer imageUrl = R.drawable.no_picture;
             Picasso.with(getContext())
-                    .load(imageUrl)
+                    .load(R.mipmap.no_picture)
                     .fit()
                     .into(viewHolder.image);
             return view;
