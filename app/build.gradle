@@ -17,6 +17,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    // For use of Infer.
+    lintOptions {
+        abortOnError false
+    }
 }
 
 repositories {
@@ -42,4 +47,7 @@ dependencies {
 
     // Butterknife
     compile 'com.jakewharton:butterknife:6.1.0'
+
+    //Pretty Logger
+    compile 'com.orhanobut:logger:1.10'
 }

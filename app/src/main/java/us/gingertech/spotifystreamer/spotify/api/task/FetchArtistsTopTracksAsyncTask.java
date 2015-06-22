@@ -3,6 +3,8 @@ package us.gingertech.spotifystreamer.spotify.api.task;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.orhanobut.logger.Logger;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,9 +44,9 @@ public class FetchArtistsTopTracksAsyncTask extends AsyncTask<String, Void, Arra
 
             return (ArrayList<Track>) tracks.tracks;
         } catch (RetrofitError e) {
-            Log.d("Retrofit Error:", e.toString());
+            Logger.e(e, "Retrofit Error");
         } catch (Exception e) {
-            Log.d("Missing Params: ", e.toString());
+            Logger.e(e, "Missing Params");
         }
         return null;
     }
