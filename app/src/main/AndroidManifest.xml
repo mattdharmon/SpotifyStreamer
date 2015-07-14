@@ -3,6 +3,7 @@
     package="us.gingertech.spotifystreamer" >
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -20,6 +21,10 @@
         </activity>
         <activity
             android:name=".TrackList"
+            android:label="@string/title_activity_track_list" >
+        </activity>
+        <activity
+            android:name=".MediaPlayerActivity"
             android:label="@string/title_activity_track_list" >
         </activity>
     </application>

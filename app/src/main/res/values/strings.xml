@@ -3,4 +3,8 @@
     <string name="action_settings">Settings</string>
     <string name="artists_image_view_description">Artists Image</string>
     <string name="title_activity_track_list">Top 10 Tracks</string>
+    <string name="album_image_description">Album View</string>
+    <string name="play_previous_track">Play Previous Track</string>
+    <string name="play_current">play</string>
+    <string name="play_next_track">Play next track</string>
 </resources>

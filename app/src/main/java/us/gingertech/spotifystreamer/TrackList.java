@@ -16,7 +16,7 @@ public class TrackList extends ActionBarActivity {
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                 .beginTransaction()
-                .add(R.id.container, new TrackListFragment())
+                .add(R.id.top_tracks_container, new TrackListFragment())
                 .commit();
         }
     }

@@ -2,20 +2,23 @@ package us.gingertech.spotifystreamer;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import butterknife.ButterKnife;
-import butterknife.InjectView;
-import butterknife.OnItemSelected;
+import butterknife.Bind;
 import butterknife.OnTextChanged;
 import kaaes.spotify.webapi.android.models.Artist;
 import us.gingertech.spotifystreamer.spotify.api.adapter.ArtistsAdapter;
@@ -32,13 +35,18 @@ public class MainActivityFragment extends Fragment implements
 {
     private ArtistsAdapter artistsAdapter;
     private String query;
-    private ArrayList<Artist> artists;
+    private boolean isLargeView;
+    private View currentSelection;
 
-    @InjectView(R.id.list_view_search)
+    @Bind(R.id.list_view_search)
     protected ListView lvArtists;
 
-    @InjectView(R.id.edittext_artist_search)
+    @Bind(R.id.edittext_artist_search)
     protected EditText etArtiestSearch;
+
+    @Nullable
+    @Bind(R.id.top_tracks_container)
+    protected FrameLayout ctTopTracks;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -54,7 +62,7 @@ public class MainActivityFragment extends Fragment implements
     ) {
         // Get the fragment view.
         View rootView = inflater.inflate(R.layout.fragment_main, null);
-        ButterKnife.inject(this, rootView);
+        ButterKnife.bind(this, rootView);
 
         // Attach the listeners
         lvArtists.setOnItemClickListener(this);
@@ -62,14 +70,14 @@ public class MainActivityFragment extends Fragment implements
         if (savedInstanceState == null) {
             // Generate a basic list of spotify  "A list" artists. Ha Ha, I made a punny.
             query = "A";
-            searchArtists();
+            new FetchArtistsAsyncTask(this).execute(query);
+            isLargeView = ctTopTracks != null;
+            return rootView;
         }
 
         // Have it build the adaptor
-        if (savedInstanceState != null) {
-            etArtiestSearch.setText(query);
-            lvArtists.setAdapter(artistsAdapter);
-        }
+        etArtiestSearch.setText(query);
+        lvArtists.setAdapter(artistsAdapter);
 
         return rootView;
     }
@@ -77,7 +85,6 @@ public class MainActivityFragment extends Fragment implements
     @Override
     public void onTaskCompleted(ArrayList<Artist> artists) {
         // Bind the adapters.
-//        this.artists = artists;
         artistsAdapter = new ArtistsAdapter(getActivity(), artists);
         lvArtists.setAdapter(artistsAdapter);
     }
@@ -88,29 +95,57 @@ public class MainActivityFragment extends Fragment implements
         toast.show();
     }
 
-    @OnItemSelected(R.id.list_view_search)
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        // Build the top tracks of the selected artist.
-        String artistsId = (String) view.getTag();
-        Intent intent = new Intent(getActivity(), TrackList.class)
-            .putExtra(Intent.EXTRA_UID, artistsId);
-        startActivity(intent);
+    @Override
+    public void onItemClick(@NonNull AdapterView<?> parent, @NonNull View view, int position, long id) {
+        // Save an http call by comparing the old artistId with the new.
+        if (currentSelection == view) {
+            return;
+        }
+        setCurrentSelection(view);
+        if (isLargeView) {
+            renderLargeViewTrackList();
+            return;
+        }
+
+        startTrackListActivity();
     }
 
     @OnTextChanged(R.id.edittext_artist_search)
     public void onTextChanged(CharSequence text) {
         // If there is no difference, in the texts,
         // save an HTTP request.
-        if (query.equals(text.toString())) {
+        if (query == text.toString()) {
             return;
         }
 
         // Set the query variable and perform a search.
         query = text.toString();
-        searchArtists();
-    }
-
-    private void searchArtists() {
         new FetchArtistsAsyncTask(this).execute(query);
     }
+
+    public void setCurrentSelection(View view) {
+        if (currentSelection != null) {
+            int color = getResources().getColor(R.color.background_material_light);
+            currentSelection.setBackgroundColor(color);
+        }
+        int color = getResources().getColor(R.color.list_item_selected);
+        view.setBackgroundColor(color);
+        currentSelection = view;
+    }
+
+    private void renderLargeViewTrackList() {
+        TrackListFragment trackListFragment = new TrackListFragment();
+        trackListFragment.setArtistId((String) currentSelection.getTag());
+        getFragmentManager()
+            .beginTransaction()
+            .replace(R.id.top_tracks_container, trackListFragment)
+            .commit();
+    }
+
+    private void startTrackListActivity() {
+        Intent intent = new Intent(getActivity(), TrackList.class)
+            .putExtra(Intent.EXTRA_UID, (String) currentSelection.getTag());
+        startActivity(intent);
+    }
+
 }

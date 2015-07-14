@@ -1,6 +1,8 @@
 package us.gingertech.spotifystreamer.spotify.api.task;
 
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.orhanobut.logger.Logger;
 
@@ -18,15 +20,15 @@ import retrofit.RetrofitError;
  */
 public class FetchArtistsAsyncTask extends AsyncTask<String, Void, ArrayList<Artist>> {
     private SpotifyService service;
-    private IOnTaskCompleted listener;
+    private IOnTaskCompleted<ArrayList<Artist>> listener;
 
-    public FetchArtistsAsyncTask(IOnTaskCompleted listener) {
+    public FetchArtistsAsyncTask(IOnTaskCompleted<ArrayList<Artist>> listener) {
         this.listener = listener;
         service = new SpotifyApi().getService();
     }
 
     @Override
-    protected ArrayList<Artist> doInBackground(String... params) {
+    protected ArrayList<Artist> doInBackground(@NonNull String[] params) {
         try {
             if (params.length == 0) {
                 throw new Exception("Params are not to be empty.");
@@ -37,7 +39,7 @@ public class FetchArtistsAsyncTask extends AsyncTask<String, Void, ArrayList<Art
 
             return (ArrayList<Artist>) artistsPager.artists.items;
         } catch (RetrofitError e) {
-            Logger.e(e, "Retrofit Error");
+            Logger.e(e, e.getStackTrace().toString());
         } catch (Exception e) {
             Logger.e(e, "Missing Params");
         }
@@ -45,8 +47,8 @@ public class FetchArtistsAsyncTask extends AsyncTask<String, Void, ArrayList<Art
     }
 
     @Override
-    protected void onPostExecute(ArrayList<Artist> artists) {
-        // If an error occured, return it to the user.
+    protected void onPostExecute(@Nullable ArrayList<Artist> artists) {
+        // If an error occurred, return it to the user.
         if (artists == null) {
             listener.onTaskFailure("Error.");
             return;
