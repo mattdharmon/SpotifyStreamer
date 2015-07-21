@@ -14,18 +14,14 @@ import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.snappydb.DB;
-import com.snappydb.DBFactory;
-import com.snappydb.SnappydbException;
-
 import java.util.ArrayList;
-import java.util.Objects;
 
-import butterknife.ButterKnife;
 import butterknife.Bind;
+import butterknife.ButterKnife;
 import butterknife.OnTextChanged;
 import kaaes.spotify.webapi.android.models.Artist;
-import us.gingertech.spotifystreamer.domain.TracksDomain;
+import us.gingertech.spotifystreamer.domain.ArtistsDomain;
+import us.gingertech.spotifystreamer.repository.ArtistsRepository;
 import us.gingertech.spotifystreamer.spotify.api.adapter.ArtistsAdapter;
 import us.gingertech.spotifystreamer.spotify.api.task.FetchArtistsAsyncTask;
 import us.gingertech.spotifystreamer.spotify.api.task.IOnTaskCompleted;
@@ -42,7 +38,8 @@ public class MainActivityFragment extends Fragment implements
     private String query;
     private boolean isLargeView;
     private View currentSelection;
-    private TracksDomain tracksDomain;
+    private ArtistsDomain artistsDomain;
+    private ArtistsRepository artistsRepository;
 
     @Bind(R.id.list_view_search)
     protected ListView lvArtists;
@@ -57,7 +54,8 @@ public class MainActivityFragment extends Fragment implements
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        tracksDomain = new TracksDomain(getActivity());
+        artistsDomain = new ArtistsDomain(getActivity());
+        artistsRepository = new ArtistsRepository(getActivity());
         setRetainInstance(true);
     }
 
@@ -76,23 +74,32 @@ public class MainActivityFragment extends Fragment implements
 
         if (savedInstanceState == null) {
             // Generate a basic list of spotify  "A list" artists. Ha Ha, I made a punny.
-            query = "A";
-            new FetchArtistsAsyncTask(this).execute(query);
+            if (artistsRepository.getArtistsSearchQuery() == null) {
+                artistsDomain.saveArtistsSearchQuery("A");
+            }
+            etArtiestSearch.setText(artistsRepository.getArtistsSearchQuery());
+            new FetchArtistsAsyncTask(this).execute(artistsRepository.getArtistsSearchQuery());
             isLargeView = ctTopTracks != null;
-            return rootView;
         }
-
-        // Have it build the adaptor
-        etArtiestSearch.setText(query);
-        lvArtists.setAdapter(artistsAdapter);
-
         return rootView;
+    }
+
+    @Override
+    public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
+        super.onViewStateRestored(savedInstanceState);
+        if (savedInstanceState == null) {
+            return;
+        }
+        // Have it build the adaptor
+        etArtiestSearch.setText(artistsRepository.getArtistsSearchQuery());
+        lvArtists.setAdapter(artistsAdapter);
     }
 
     @Override
     public void onTaskCompleted(ArrayList<Artist> artists) {
         // Bind the adapters.
-        artistsAdapter = new ArtistsAdapter(getActivity(), artists);
+        artistsDomain.saveArtistsSearchResults(artists);
+        artistsAdapter = new ArtistsAdapter(getActivity(), artistsRepository.getArtistsSearchResults());
         lvArtists.setAdapter(artistsAdapter);
     }
 
@@ -105,7 +112,7 @@ public class MainActivityFragment extends Fragment implements
     @Override
     public void onItemClick(@NonNull AdapterView<?> parent, @NonNull View view, int position, long id) {
         // Save an http call by comparing the old artistId with the new.
-        tracksDomain.saveArtistsId((String) view.getTag());
+        artistsDomain.saveArtistsId((String) view.getTag());
         if (currentSelection == view) {
             return;
         }
@@ -126,13 +133,13 @@ public class MainActivityFragment extends Fragment implements
     public void onTextChanged(CharSequence text) {
         // If there is no difference, in the texts,
         // save an HTTP request.
-        if (query == text.toString()) {
+        if (artistsRepository.getArtistsSearchQuery().equals(text.toString())) {
             return;
         }
 
         // Set the query variable and perform a search.
-        query = text.toString();
-        new FetchArtistsAsyncTask(this).execute(query);
+        artistsDomain.saveArtistsSearchQuery(text.toString());
+        new FetchArtistsAsyncTask(this).execute(artistsRepository.getArtistsSearchQuery());
     }
 
     public void setCurrentSelection(View view) {

@@ -18,6 +18,7 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import kaaes.spotify.webapi.android.models.Track;
 import us.gingertech.spotifystreamer.domain.TracksDomain;
+import us.gingertech.spotifystreamer.repository.ArtistsRepository;
 import us.gingertech.spotifystreamer.repository.TracksRepository;
 import us.gingertech.spotifystreamer.spotify.api.adapter.TracksAdapter;
 import us.gingertech.spotifystreamer.spotify.api.task.FetchArtistsTopTracksAsyncTask;
@@ -36,6 +37,7 @@ public class TrackListFragment extends Fragment implements
     protected ArrayList<Track> tracks;
     protected boolean isLargeView = false;
     protected TracksRepository tracksRepository;
+    protected ArtistsRepository artistsRepository;
     protected TracksDomain tracksDomain;
 
     @Bind(R.id.list_view_tracks)
@@ -51,6 +53,7 @@ public class TrackListFragment extends Fragment implements
         playerService = application.getPlayerService();
         tracksDomain = new TracksDomain(getActivity());
         tracksRepository = new TracksRepository(getActivity());
+        artistsRepository = new ArtistsRepository(getActivity());
         setRetainInstance(true);
     }
 
@@ -64,14 +67,11 @@ public class TrackListFragment extends Fragment implements
         View rootView = inflater.inflate(R.layout.fragment_track_list, null);
         ButterKnife.bind(this, rootView);
 
-        // If the instances is not saved, get the intent.
-        if (savedInstanceState == null) {
+        tracks = tracksRepository.getTracks();
+        if (tracks == null) {
             getTopTracks();
         }
-
-        if (savedInstanceState != null) {
-            build();
-        }
+        build();
 
         if (playerService.isPrepared) {
             Runnable run = new Runnable() {
@@ -86,6 +86,35 @@ public class TrackListFragment extends Fragment implements
         return rootView;
     }
 
+    @Override
+    public void onViewStateRestored(Bundle savedInstanceState) {
+        super.onViewStateRestored(savedInstanceState);
+        if (savedInstanceState != null) {
+            tracks = tracksRepository.getTracks();
+            build();
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        tracksDomain.saveTracks(tracks);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        tracks = tracksRepository.getTracks();
+        if (tracks == null) {
+            getTopTracks();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        tracksDomain.saveTracks(tracks);
+    }
 
     /**
      * Needed to handle the information received from the spotify async task.
@@ -139,6 +168,6 @@ public class TrackListFragment extends Fragment implements
     }
 
     private void getTopTracks() {
-        new FetchArtistsTopTracksAsyncTask(this).execute(tracksRepository.getSelectedArtistId());
+        new FetchArtistsTopTracksAsyncTask(this).execute(artistsRepository.getSelectedArtistId());
     }
 }

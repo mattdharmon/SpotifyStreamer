@@ -3,9 +3,10 @@ package us.gingertech.spotifystreamer.repository;
 import android.content.Context;
 
 import com.orhanobut.logger.Logger;
-import com.snappydb.DB;
-import com.snappydb.DBFactory;
 import com.snappydb.SnappydbException;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import kaaes.spotify.webapi.android.models.Track;
 
@@ -14,39 +15,25 @@ import kaaes.spotify.webapi.android.models.Track;
  *
  * Created by Matthew Harmon on 7/20/15.
  */
-public class TracksRepository {
-    private Context context;
+public class TracksRepository extends Repository {
+    private static final String DATABASE_NAME = "tracks";
 
     public TracksRepository(Context context) {
-        this.context = context;
-    }
-
-    public String getSelectedArtistId() {
-        try {
-            // Get the intent to get the tracks for the artist.
-            DB tracksDB = DBFactory.open(context, "tracks");
-            String artistId = tracksDB.get("artistsId");
-            tracksDB.close();
-            return artistId;
-        } catch (SnappydbException e) {
-            Logger.e(e, "Get Current track Position.");
-            e.printStackTrace();
-        }
-        return null;
+        super(context);
     }
 
     public int getCurrentTrackPosition() {
+        int results = 0;
         try {
-            DB tracksDB = DBFactory.open(context, "tracks");
-            int currentTrackPos = tracksDB.getInt("currentTrackPos");
-            tracksDB.close();
-            return currentTrackPos;
+            openDatabase(DATABASE_NAME);
+            results = snappyDB.getInt("currentTrackPos");
         } catch (SnappydbException e) {
             Logger.e(e, "Get Current track Position.");
-            Logger.e(e, "In Prepare track.");
             e.printStackTrace();
+        } finally {
+            closeDatabase();
         }
-        return 0;
+        return results;
     }
 
     public Track getTrack(int key) {
@@ -54,18 +41,18 @@ public class TracksRepository {
     }
 
     public Track getTrack(String key) {
+        Track track = null;
         try {
             // Get the current track
-            DB tracksDB = DBFactory.open(context, "tracks");
-            Track track = tracksDB.getObject(key, Track.class);
-            tracksDB.close();
-            return track;
+            openDatabase(DATABASE_NAME);
+            track = snappyDB.getObject(key, Track.class);
         } catch (SnappydbException e) {
             Logger.e(e, "Get track error. Key: ".concat(key));
-            Logger.e(e, "In Prepare track.");
             e.printStackTrace();
+        } finally {
+            closeDatabase();
         }
-        return null;
+        return track;
     }
 
     public boolean trackExists(int key) {
@@ -75,17 +62,29 @@ public class TracksRepository {
     public boolean trackExists(String key) {
         boolean results = false;
         try {
-            DB tracksDB = DBFactory.open(context, "tracks");
-            results = tracksDB.exists(key);
-            tracksDB.close();
+            openDatabase(DATABASE_NAME);
+            results = snappyDB.exists(key);
         } catch (SnappydbException e) {
             Logger.e(e, "Track exists error. Key: ".concat(key));
             e.printStackTrace();
+        } finally {
+            closeDatabase();
         }
         return results;
     }
 
-    public void setContext(Context context) {
-        this.context = context;
+    public ArrayList<Track> getTracks() {
+        ArrayList<Track> results = null;
+        try {
+            openDatabase(DATABASE_NAME);
+            Track[] tracks = snappyDB.getObjectArray("cachedTracks", Track.class);
+            results = new ArrayList<>(Arrays.asList(tracks));
+        } catch (SnappydbException e) {
+            Logger.e(e, "Get Current track Position.");
+            e.printStackTrace();
+        } finally {
+            closeDatabase();
+        }
+        return results;
     }
 }

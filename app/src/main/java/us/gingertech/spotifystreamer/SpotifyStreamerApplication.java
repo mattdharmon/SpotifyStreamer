@@ -38,10 +38,6 @@ public class SpotifyStreamerApplication extends Application {
         return playerService;
     }
 
-    public Intent getPlayerIntent() {
-        return playerIntent;
-    }
-
     private ServiceConnection musicConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {

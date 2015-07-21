@@ -7,6 +7,7 @@ import android.support.annotation.Nullable;
 import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
@@ -39,7 +40,7 @@ public class FetchArtistsAsyncTask extends AsyncTask<String, Void, ArrayList<Art
 
             return (ArrayList<Artist>) artistsPager.artists.items;
         } catch (RetrofitError e) {
-            Logger.e(e, e.getStackTrace().toString());
+            Logger.e(e, Arrays.toString(e.getStackTrace()));
         } catch (Exception e) {
             Logger.e(e, "Missing Params");
         }

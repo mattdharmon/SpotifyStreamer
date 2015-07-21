@@ -1,17 +1,9 @@
 package us.gingertech.spotifystreamer;
 
-import android.app.Dialog;
-import android.support.annotation.NonNull;
-import android.support.v4.app.DialogFragment;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.res.Resources;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
+import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,17 +18,13 @@ import java.util.concurrent.TimeUnit;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-
-import us.gingertech.spotifystreamer.SpotifyStreamerMediaPlayerService.MusicServiceBinder;
 import us.gingertech.spotifystreamer.repository.TracksRepository;
 
 
 public class MediaPlayerFragment extends DialogFragment implements
         MediaServiceListener
 {
-    private SpotifyStreamerApplication application;
     private SpotifyStreamerMediaPlayerService playerService;
-    private Intent playerIntent;
     private TracksRepository tracksRepository;
     private Resources res;
 
@@ -65,7 +53,7 @@ public class MediaPlayerFragment extends DialogFragment implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         tracksRepository = new TracksRepository(getActivity());
-        application = (SpotifyStreamerApplication) getActivity().getApplication();
+        SpotifyStreamerApplication application = (SpotifyStreamerApplication) getActivity().getApplication();
         playerService = application.getPlayerService();
         playerService.setFragmentListener(this);
         res = getResources();

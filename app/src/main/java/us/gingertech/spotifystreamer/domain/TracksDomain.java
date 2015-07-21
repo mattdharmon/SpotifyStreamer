@@ -2,8 +2,7 @@ package us.gingertech.spotifystreamer.domain;
 
 import android.content.Context;
 
-import com.snappydb.DB;
-import com.snappydb.DBFactory;
+import com.orhanobut.logger.Logger;
 import com.snappydb.SnappydbException;
 
 import java.util.ArrayList;
@@ -15,46 +14,49 @@ import kaaes.spotify.webapi.android.models.Track;
  *
  * Created by Matthew Harmon on 7/20/15.
  */
-public class TracksDomain {
-    private Context context;
+public class TracksDomain extends Domain {
+    private static final String DATABASE_NAME = "tracks";
 
     public TracksDomain(Context context) {
-        this.context = context;
+        super(context);
     }
 
     public void saveCurrentTrackPosition(int currentTrackPosition) {
         try {
-            DB tracksDB = DBFactory.open(context, "tracks");
-            tracksDB.putInt("currentTrackPos", currentTrackPosition);
-            tracksDB.close();
+            openDatabase(DATABASE_NAME);
+            snappyDB.putInt("currentTrackPos", currentTrackPosition);
         } catch (SnappydbException e) {
+            Logger.e(e, "Error in saving current track position.");
             e.printStackTrace();
+        } finally {
+            closeDatabase();
         }
     }
 
     public void saveTopTracks(ArrayList<Track> tracks) {
         try {
-            DB tracksDB = DBFactory.open(context, "tracks");
+            openDatabase(DATABASE_NAME);
             for (int i = 0; i < tracks.size(); i++) {
-                tracksDB.put(Integer.toString(i), tracks.get(i));
+                snappyDB.put(Integer.toString(i), tracks.get(i));
             }
-            tracksDB.close();
         } catch (SnappydbException e) {
+            Logger.e(e, "Error in saving top tracks.");
             e.printStackTrace();
+        } finally {
+            closeDatabase();
         }
     }
 
-    public void saveArtistsId(String artistsId) {
+    public void saveTracks(ArrayList<Track> tracks) {
+
         try {
-            DB tracksDB = DBFactory.open(context, "tracks");
-            tracksDB.put("artistsId", artistsId);
-            tracksDB.close();
+            openDatabase(DATABASE_NAME);
+            snappyDB.put("cachedTracks", tracks.toArray());
         } catch (SnappydbException e) {
+            Logger.e(e, "Error in saving top tracks.");
             e.printStackTrace();
+        } finally {
+            closeDatabase();
         }
-    }
-
-    public void setContext(Context context) {
-        this.context = context;
     }
 }
