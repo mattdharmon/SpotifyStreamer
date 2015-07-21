@@ -7,4 +7,7 @@
     <string name="play_previous_track">Play Previous Track</string>
     <string name="play_current">play</string>
     <string name="play_next_track">Play next track</string>
+
+<!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

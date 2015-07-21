@@ -14,6 +14,10 @@ import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.snappydb.DB;
+import com.snappydb.DBFactory;
+import com.snappydb.SnappydbException;
+
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -21,6 +25,7 @@ import butterknife.ButterKnife;
 import butterknife.Bind;
 import butterknife.OnTextChanged;
 import kaaes.spotify.webapi.android.models.Artist;
+import us.gingertech.spotifystreamer.domain.TracksDomain;
 import us.gingertech.spotifystreamer.spotify.api.adapter.ArtistsAdapter;
 import us.gingertech.spotifystreamer.spotify.api.task.FetchArtistsAsyncTask;
 import us.gingertech.spotifystreamer.spotify.api.task.IOnTaskCompleted;
@@ -37,6 +42,7 @@ public class MainActivityFragment extends Fragment implements
     private String query;
     private boolean isLargeView;
     private View currentSelection;
+    private TracksDomain tracksDomain;
 
     @Bind(R.id.list_view_search)
     protected ListView lvArtists;
@@ -51,6 +57,7 @@ public class MainActivityFragment extends Fragment implements
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        tracksDomain = new TracksDomain(getActivity());
         setRetainInstance(true);
     }
 
@@ -98,10 +105,15 @@ public class MainActivityFragment extends Fragment implements
     @Override
     public void onItemClick(@NonNull AdapterView<?> parent, @NonNull View view, int position, long id) {
         // Save an http call by comparing the old artistId with the new.
+        tracksDomain.saveArtistsId((String) view.getTag());
         if (currentSelection == view) {
             return;
         }
+
+        // Update the selection colors.
         setCurrentSelection(view);
+
+        // Render the large view layout.
         if (isLargeView) {
             renderLargeViewTrackList();
             return;
@@ -124,10 +136,13 @@ public class MainActivityFragment extends Fragment implements
     }
 
     public void setCurrentSelection(View view) {
+        // Change the current selection to the same background color.
         if (currentSelection != null) {
             int color = getResources().getColor(R.color.background_material_light);
             currentSelection.setBackgroundColor(color);
         }
+
+        // Update the current selection color.
         int color = getResources().getColor(R.color.list_item_selected);
         view.setBackgroundColor(color);
         currentSelection = view;
@@ -135,7 +150,7 @@ public class MainActivityFragment extends Fragment implements
 
     private void renderLargeViewTrackList() {
         TrackListFragment trackListFragment = new TrackListFragment();
-        trackListFragment.setArtistId((String) currentSelection.getTag());
+        trackListFragment.setIsLargeView(true);
         getFragmentManager()
             .beginTransaction()
             .replace(R.id.top_tracks_container, trackListFragment)
@@ -143,9 +158,8 @@ public class MainActivityFragment extends Fragment implements
     }
 
     private void startTrackListActivity() {
-        Intent intent = new Intent(getActivity(), TrackList.class)
-            .putExtra(Intent.EXTRA_UID, (String) currentSelection.getTag());
+        // Save the top ten tracks to the snappy.
+        Intent intent = new Intent(getActivity(), TrackList.class);
         startActivity(intent);
     }
-
 }

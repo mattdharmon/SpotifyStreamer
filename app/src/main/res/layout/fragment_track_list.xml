@@ -5,7 +5,8 @@
     android:layout_height="match_parent"
     android:padding="@dimen/small_padding"
     tools:context="us.gingertech.spotifystreamer.TrackListFragment"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:id="@+id/track_list_container">
 
     <ListView
         android:id="@+id/list_view_tracks"

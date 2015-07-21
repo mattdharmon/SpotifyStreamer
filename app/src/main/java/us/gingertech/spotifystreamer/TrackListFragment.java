@@ -1,8 +1,10 @@
 package us.gingertech.spotifystreamer;
 
-import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,15 +12,13 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.snappydb.DB;
-import com.snappydb.DBFactory;
-import com.snappydb.SnappydbException;
-
 import java.util.ArrayList;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import kaaes.spotify.webapi.android.models.Track;
+import us.gingertech.spotifystreamer.domain.TracksDomain;
+import us.gingertech.spotifystreamer.repository.TracksRepository;
 import us.gingertech.spotifystreamer.spotify.api.adapter.TracksAdapter;
 import us.gingertech.spotifystreamer.spotify.api.task.FetchArtistsTopTracksAsyncTask;
 import us.gingertech.spotifystreamer.spotify.api.task.IOnTaskCompleted;
@@ -31,8 +31,12 @@ public class TrackListFragment extends Fragment implements
         IOnTaskCompleted<ArrayList<Track>>,
         AdapterView.OnItemClickListener
 {
-    protected String artistId;
+    protected SpotifyStreamerApplication application;
+    protected SpotifyStreamerMediaPlayerService playerService;
     protected ArrayList<Track> tracks;
+    protected boolean isLargeView = false;
+    protected TracksRepository tracksRepository;
+    protected TracksDomain tracksDomain;
 
     @Bind(R.id.list_view_tracks)
     protected ListView lvTracks;
@@ -43,6 +47,10 @@ public class TrackListFragment extends Fragment implements
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        application = (SpotifyStreamerApplication) getActivity().getApplication();
+        playerService = application.getPlayerService();
+        tracksDomain = new TracksDomain(getActivity());
+        tracksRepository = new TracksRepository(getActivity());
         setRetainInstance(true);
     }
 
@@ -58,19 +66,26 @@ public class TrackListFragment extends Fragment implements
 
         // If the instances is not saved, get the intent.
         if (savedInstanceState == null) {
-            // Get the intent to get the tracks for the artist.
-            Intent intent = getActivity().getIntent();
-            if (intent != null && intent.hasExtra(Intent.EXTRA_UID)) {
-                artistId = intent.getStringExtra(Intent.EXTRA_UID);
-            }
             getTopTracks();
         }
 
         if (savedInstanceState != null) {
             build();
         }
+
+        if (playerService.isPrepared) {
+            Runnable run = new Runnable() {
+                @Override
+                public void run() {
+                    renderMediaPlayer();
+                }
+            };
+            new Handler().postDelayed(run, 1000);
+        }
+
         return rootView;
     }
+
 
     /**
      * Needed to handle the information received from the spotify async task.
@@ -87,27 +102,29 @@ public class TrackListFragment extends Fragment implements
         toast.show();
     }
 
-    public void setArtistId(String artistId) {
-        this.artistId = artistId;
+    public void setIsLargeView(boolean isLargeView) {
+        this.isLargeView = isLargeView;
     }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        try {
-            // Save the top ten tracks to the snappy.
-            DB tracksDB = DBFactory.open(getActivity(), "tracks");
-            for (int i = 0; i < tracks.size() - 1; i++) {
-                tracksDB.put(Integer.toString(i), tracks.get(i));
-            }
-            tracksDB.close();
+    public void onItemClick(@NonNull AdapterView<?> parent, @NonNull View view, int position, long id) {
+        tracksDomain.saveTopTracks(tracks);
+        tracksDomain.saveCurrentTrackPosition(position);
+        renderMediaPlayer();
+    }
 
-            // Start the mediaplayer activity
-            Intent intent = new Intent(getActivity(), MediaPlayerActivity.class)
-                    .putExtra(Intent.EXTRA_UID, position);
-            startActivity(intent);
-        } catch (SnappydbException e) {
-            e.printStackTrace();
+    private void renderMediaPlayer() {
+        MediaPlayerFragment mediaPlayerFragment = new MediaPlayerFragment();
+        if (isLargeView) {
+            mediaPlayerFragment.show(getActivity().getSupportFragmentManager(), "Dialog");
+        } else {
+            FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+            transaction.add(R.id.top_tracks_container, mediaPlayerFragment)
+                    .addToBackStack(null)
+                    .commit();
         }
+
     }
 
     private void build() {
@@ -122,6 +139,6 @@ public class TrackListFragment extends Fragment implements
     }
 
     private void getTopTracks() {
-        new FetchArtistsTopTracksAsyncTask(this).execute(artistId);
+        new FetchArtistsTopTracksAsyncTask(this).execute(tracksRepository.getSelectedArtistId());
     }
 }

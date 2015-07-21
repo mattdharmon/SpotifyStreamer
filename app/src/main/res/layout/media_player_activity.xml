@@ -1,53 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="us.gingertech.spotifystreamer.MediaPlayerActivity"
-    android:orientation="vertical"
+    android:id="@+id/currently_playing_container"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context="us.gingertech.spotifystreamer.MediaPlayerActivity"
+    tools:ignore="MergeRootFrame" />
 
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:id="@+id/media_album_imageview"
-        android:layout_gravity="center_horizontal"
-        android:contentDescription="@string/album_image_description" />
-
-    <SeekBar
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/seek_bar" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:id="@+id/ic_prev_track"
-            android:src="@android:drawable/ic_media_previous"
-            android:contentDescription="@string/play_previous_track" />
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:id="@+id/ic_media_play"
-            android:src="@android:drawable/ic_media_play"
-            android:contentDescription="@string/play_current" />
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:id="@+id/ic_media_next"
-            android:src="@android:drawable/ic_media_next"
-            android:contentDescription="@string/play_next_track" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:id="@+id/duration"/>
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:id="@+id/track_length"/>
-    </LinearLayout>
-
-</LinearLayout>
