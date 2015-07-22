@@ -21,7 +21,11 @@ import butterknife.ButterKnife;
 import butterknife.OnTextChanged;
 import kaaes.spotify.webapi.android.models.Artist;
 import us.gingertech.spotifystreamer.domain.ArtistsDomain;
+import us.gingertech.spotifystreamer.domain.StateDomain;
+import us.gingertech.spotifystreamer.domain.TracksDomain;
 import us.gingertech.spotifystreamer.repository.ArtistsRepository;
+import us.gingertech.spotifystreamer.repository.StateRepository;
+import us.gingertech.spotifystreamer.repository.TracksRepository;
 import us.gingertech.spotifystreamer.spotify.api.adapter.ArtistsAdapter;
 import us.gingertech.spotifystreamer.spotify.api.task.FetchArtistsAsyncTask;
 import us.gingertech.spotifystreamer.spotify.api.task.IOnTaskCompleted;
@@ -35,11 +39,12 @@ public class MainActivityFragment extends Fragment implements
         AdapterView.OnItemClickListener
 {
     private ArtistsAdapter artistsAdapter;
-    private String query;
-    private boolean isLargeView;
     private View currentSelection;
     private ArtistsDomain artistsDomain;
     private ArtistsRepository artistsRepository;
+    private StateDomain stateDomain;
+    private StateRepository stateRepository;
+    private TracksDomain tracksDomain;
 
     @Bind(R.id.list_view_search)
     protected ListView lvArtists;
@@ -56,6 +61,9 @@ public class MainActivityFragment extends Fragment implements
         super.onCreate(savedInstanceState);
         artistsDomain = new ArtistsDomain(getActivity());
         artistsRepository = new ArtistsRepository(getActivity());
+        stateDomain = new StateDomain(getActivity());
+        stateRepository = new StateRepository(getActivity());
+        tracksDomain = new TracksDomain(getActivity());
         setRetainInstance(true);
     }
 
@@ -77,9 +85,15 @@ public class MainActivityFragment extends Fragment implements
             if (artistsRepository.getArtistsSearchQuery() == null) {
                 artistsDomain.saveArtistsSearchQuery("A");
             }
+
+            if (artistsRepository.getArtistsSearchResults() != null) {
+                artistsAdapter = new ArtistsAdapter(getActivity(), artistsRepository.getArtistsSearchResults());
+                lvArtists.setAdapter(artistsAdapter);
+            } else {
+                new FetchArtistsAsyncTask(this).execute(artistsRepository.getArtistsSearchQuery());
+            }
             etArtiestSearch.setText(artistsRepository.getArtistsSearchQuery());
-            new FetchArtistsAsyncTask(this).execute(artistsRepository.getArtistsSearchQuery());
-            isLargeView = ctTopTracks != null;
+            stateDomain.isLargeScreen(ctTopTracks != null);
         }
         return rootView;
     }
@@ -121,7 +135,7 @@ public class MainActivityFragment extends Fragment implements
         setCurrentSelection(view);
 
         // Render the large view layout.
-        if (isLargeView) {
+        if (stateRepository.isLargeScreen()) {
             renderLargeViewTrackList();
             return;
         }
@@ -157,7 +171,6 @@ public class MainActivityFragment extends Fragment implements
 
     private void renderLargeViewTrackList() {
         TrackListFragment trackListFragment = new TrackListFragment();
-        trackListFragment.setIsLargeView(true);
         getFragmentManager()
             .beginTransaction()
             .replace(R.id.top_tracks_container, trackListFragment)

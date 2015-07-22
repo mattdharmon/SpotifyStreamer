@@ -17,8 +17,10 @@ import java.util.ArrayList;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import kaaes.spotify.webapi.android.models.Track;
+import us.gingertech.spotifystreamer.domain.ArtistsDomain;
 import us.gingertech.spotifystreamer.domain.TracksDomain;
 import us.gingertech.spotifystreamer.repository.ArtistsRepository;
+import us.gingertech.spotifystreamer.repository.StateRepository;
 import us.gingertech.spotifystreamer.repository.TracksRepository;
 import us.gingertech.spotifystreamer.spotify.api.adapter.TracksAdapter;
 import us.gingertech.spotifystreamer.spotify.api.task.FetchArtistsTopTracksAsyncTask;
@@ -34,11 +36,11 @@ public class TrackListFragment extends Fragment implements
 {
     protected SpotifyStreamerApplication application;
     protected SpotifyStreamerMediaPlayerService playerService;
-    protected ArrayList<Track> tracks;
-    protected boolean isLargeView = false;
     protected TracksRepository tracksRepository;
     protected ArtistsRepository artistsRepository;
+    protected ArtistsDomain artistsDomain;
     protected TracksDomain tracksDomain;
+    protected StateRepository stateRepository;
 
     @Bind(R.id.list_view_tracks)
     protected ListView lvTracks;
@@ -54,6 +56,8 @@ public class TrackListFragment extends Fragment implements
         tracksDomain = new TracksDomain(getActivity());
         tracksRepository = new TracksRepository(getActivity());
         artistsRepository = new ArtistsRepository(getActivity());
+        artistsDomain = new ArtistsDomain(getActivity());
+        stateRepository = new StateRepository(getActivity());
         setRetainInstance(true);
     }
 
@@ -67,11 +71,13 @@ public class TrackListFragment extends Fragment implements
         View rootView = inflater.inflate(R.layout.fragment_track_list, null);
         ButterKnife.bind(this, rootView);
 
-        tracks = tracksRepository.getTracks();
-        if (tracks == null) {
+        if (artistsRepository.getCurrentArtistId() == null
+            || !artistsRepository.getSelectedArtistId().equalsIgnoreCase(artistsRepository.getCurrentArtistId())
+        ) {
             getTopTracks();
+        } else {
+            build();
         }
-        build();
 
         if (playerService.isPrepared) {
             Runnable run = new Runnable() {
@@ -89,31 +95,21 @@ public class TrackListFragment extends Fragment implements
     @Override
     public void onViewStateRestored(Bundle savedInstanceState) {
         super.onViewStateRestored(savedInstanceState);
-        if (savedInstanceState != null) {
-            tracks = tracksRepository.getTracks();
-            build();
-        }
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        tracksDomain.saveTracks(tracks);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        tracks = tracksRepository.getTracks();
-        if (tracks == null) {
-            getTopTracks();
-        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        tracksDomain.saveTracks(tracks);
     }
 
     /**
@@ -121,7 +117,7 @@ public class TrackListFragment extends Fragment implements
      */
     @Override
     public void onTaskCompleted(ArrayList<Track> results) {
-        tracks = results;
+        tracksDomain.saveTracks(results);
         build();
     }
 
@@ -131,20 +127,17 @@ public class TrackListFragment extends Fragment implements
         toast.show();
     }
 
-    public void setIsLargeView(boolean isLargeView) {
-        this.isLargeView = isLargeView;
-    }
-
     @Override
     public void onItemClick(@NonNull AdapterView<?> parent, @NonNull View view, int position, long id) {
-        tracksDomain.saveTopTracks(tracks);
+        tracksDomain.saveTopTracks(tracksRepository.getTracks());
+        artistsDomain.saveCurrentPlayingArtist(artistsRepository.getSelectedArtistId());
         tracksDomain.saveCurrentTrackPosition(position);
         renderMediaPlayer();
     }
 
     private void renderMediaPlayer() {
         MediaPlayerFragment mediaPlayerFragment = new MediaPlayerFragment();
-        if (isLargeView) {
+        if (stateRepository.isLargeScreen()) {
             mediaPlayerFragment.show(getActivity().getSupportFragmentManager(), "Dialog");
         } else {
             FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
@@ -164,7 +157,7 @@ public class TrackListFragment extends Fragment implements
         }
 
         lvTracks.setOnItemClickListener(this);
-        lvTracks.setAdapter(new TracksAdapter(getActivity(), tracks));
+        lvTracks.setAdapter(new TracksAdapter(getActivity(), tracksRepository.getTracks()));
     }
 
     private void getTopTracks() {

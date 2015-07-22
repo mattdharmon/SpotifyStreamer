@@ -1,8 +1,10 @@
 package us.gingertech.spotifystreamer;
 
+import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,15 +20,19 @@ import java.util.concurrent.TimeUnit;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import kaaes.spotify.webapi.android.models.Image;
 import us.gingertech.spotifystreamer.repository.TracksRepository;
 
 
 public class MediaPlayerFragment extends DialogFragment implements
-        MediaServiceListener
+        MediaServiceListener,
+        SeekBar.OnSeekBarChangeListener
 {
     private SpotifyStreamerMediaPlayerService playerService;
     private TracksRepository tracksRepository;
     private Resources res;
+    private boolean isSeeking = false;
+    private Handler handler;
 
     @Bind(R.id.media_album_imageview)
     public ImageView ivAlbum;
@@ -76,6 +82,8 @@ public class MediaPlayerFragment extends DialogFragment implements
         } else {
             initView();
         }
+
+        sbCurrent.setOnSeekBarChangeListener(this);
         return rootView;
     }
 
@@ -107,6 +115,11 @@ public class MediaPlayerFragment extends DialogFragment implements
         initView();
     }
 
+    @Override
+    public void onDismiss(DialogInterface dialog) {
+        super.onDismiss(dialog);
+    }
+
     /**
      * Update the SeekBar to update it's position.
      */
@@ -114,6 +127,11 @@ public class MediaPlayerFragment extends DialogFragment implements
         if (!playerService.isPlaying()) {
             return;
         }
+
+        if (isSeeking) {
+            return;
+        }
+
         sbCurrent.setMax(playerService.getDuration());
         long minutes = TimeUnit.MILLISECONDS.toMinutes(playerService.getCurrentPosition()) % TimeUnit.HOURS.toMinutes(1);
         long seconds = TimeUnit.MILLISECONDS.toSeconds(playerService.getCurrentPosition()) % TimeUnit.MINUTES.toSeconds(1);
@@ -125,16 +143,21 @@ public class MediaPlayerFragment extends DialogFragment implements
             sbCurrent.setProgress(playerService.getCurrentPosition());
         }
 
+        if (!sbCurrent.isEnabled()) {
+            sbCurrent.setEnabled(true);
+        }
+
         String hms = String.format("%02d:%02d", minutes, seconds);
         duration.setText(hms);
 
+        handler = new Handler();
         Runnable run = new Runnable() {
             @Override
             public void run() {
                 seekBarUpdate();
             }
         };
-        new Handler().postDelayed(run, 1000);
+        handler.postDelayed(run, 1000);
     }
 
     @Override
@@ -148,14 +171,38 @@ public class MediaPlayerFragment extends DialogFragment implements
         playNextTrack();
     }
 
+    @Override
+    public void onSeekComplete() {
+        playCurrentClick();
+    }
+
+    @Override
+    public void onProgressChanged(@NonNull SeekBar seekBar, int progress, boolean fromUser) {
+        if (fromUser) {
+            playerService.seekTo(progress);
+        }
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+        playCurrentClick();
+    }
+
+    @Override
+    public void onStopTrackingTouch(@NonNull SeekBar seekBar) {
+        sbCurrent.setEnabled(false);
+    }
+
     private void initView() {
         if (getActivity() == null) {
             return;
         }
 
+        Image image = playerService.getCurrentTrack().album.images.get(0);
         Picasso.with(getActivity())
-                .load(playerService.getCurrentTrack().album.images.get(0).url)
-                .fit()
+                .load(image.url)
+                .centerInside()
+                .resize(image.width, image.height)
                 .into(ivAlbum);
 
         if (playerService.isPlaying()) {

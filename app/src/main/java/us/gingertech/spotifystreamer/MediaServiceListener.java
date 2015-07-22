@@ -6,4 +6,5 @@ package us.gingertech.spotifystreamer;
 public interface MediaServiceListener {
     void onPrepared();
     void onCompletion();
+    void onSeekComplete();
 }

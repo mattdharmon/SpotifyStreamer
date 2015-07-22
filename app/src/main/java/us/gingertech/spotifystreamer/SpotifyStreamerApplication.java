@@ -29,9 +29,8 @@ public class SpotifyStreamerApplication extends Application {
     @Override
     public void onTerminate() {
         super.onTerminate();
-        if (playerIntent != null) {
-            stopService(playerIntent);
-        }
+        stopService(playerIntent);
+        playerService.kill();
     }
 
     public SpotifyStreamerMediaPlayerService getPlayerService() {

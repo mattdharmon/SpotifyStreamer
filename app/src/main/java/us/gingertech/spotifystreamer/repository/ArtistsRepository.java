@@ -35,6 +35,21 @@ public class ArtistsRepository extends Repository {
         return results;
     }
 
+    public String getCurrentArtistId() {
+        String results = null;
+        try {
+            // Get the intent to get the tracks for the artist.
+            openDatabase(DATABASE_NAME);
+            results = snappyDB.get("currentArtistsId");
+        } catch (SnappydbException e) {
+            Logger.e(e, "Get Current track Position.");
+            e.printStackTrace();
+        } finally {
+            closeDatabase();
+        }
+        return results;
+    }
+
     public String getArtistsSearchQuery() {
         String results = null;
         try {

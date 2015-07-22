@@ -80,7 +80,7 @@ public class TracksRepository extends Repository {
             Track[] tracks = snappyDB.getObjectArray("cachedTracks", Track.class);
             results = new ArrayList<>(Arrays.asList(tracks));
         } catch (SnappydbException e) {
-            Logger.e(e, "Get Current track Position.");
+            Logger.e(e, "Get an array list of tracks.");
             e.printStackTrace();
         } finally {
             closeDatabase();

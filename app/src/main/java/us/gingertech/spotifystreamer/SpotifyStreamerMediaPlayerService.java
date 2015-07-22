@@ -18,12 +18,14 @@ import java.io.IOException;
 
 import kaaes.spotify.webapi.android.models.Track;
 import us.gingertech.spotifystreamer.domain.TracksDomain;
+import us.gingertech.spotifystreamer.repository.StateRepository;
 import us.gingertech.spotifystreamer.repository.TracksRepository;
 
 public class SpotifyStreamerMediaPlayerService extends Service implements
         MediaPlayer.OnPreparedListener,
         MediaPlayer.OnErrorListener,
-        MediaPlayer.OnCompletionListener
+        MediaPlayer.OnCompletionListener,
+        MediaPlayer.OnSeekCompleteListener
 {
     private static final int NOTIFY_ID=1;
     private NotificationManager notificationManager;
@@ -33,6 +35,7 @@ public class SpotifyStreamerMediaPlayerService extends Service implements
     private final IBinder musicServiceBinder = new MusicServiceBinder();
     private TracksDomain tracksDomain;
     private TracksRepository tracksRepository;
+    private StateRepository stateRepository;
 
     public int currentTrackPlayingPosition;
     public boolean isPrepared = false;
@@ -52,6 +55,7 @@ public class SpotifyStreamerMediaPlayerService extends Service implements
         super.onCreate();
         tracksDomain = new TracksDomain(getApplicationContext());
         tracksRepository = new TracksRepository(getApplicationContext());
+        stateRepository = new StateRepository(getApplicationContext());
         notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         mediaPlayer = new MediaPlayer();
         initMediaPlayer();
@@ -92,8 +96,19 @@ public class SpotifyStreamerMediaPlayerService extends Service implements
         fragmentListener.onCompletion();
     }
 
+    @Override
+    public void onSeekComplete(@NonNull MediaPlayer mp) {
+        fragmentListener.onSeekComplete();
+    }
+
+    public void seekTo(int position) {
+        mediaPlayer.seekTo(position);
+        setCurrentTrackPos(position);
+    }
+
     public void kill() {
         softKill();
+        notificationManager.cancelAll();
         mediaPlayer.release();
         mediaPlayer = null;
     }
@@ -168,6 +183,7 @@ public class SpotifyStreamerMediaPlayerService extends Service implements
         mediaPlayer.setOnPreparedListener(this);
         mediaPlayer.setOnErrorListener(this);
         mediaPlayer.setOnCompletionListener(this);
+        mediaPlayer.setOnSeekCompleteListener(this);
         mediaPlayer.setLooping(false);
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
     }
@@ -188,13 +204,19 @@ public class SpotifyStreamerMediaPlayerService extends Service implements
             mediaPlayer.setDataSource(currentTrack.preview_url);
             mediaPlayer.prepareAsync();
         } catch (IOException e) {
+            Logger.e(e, "Failed to prepare track.");
             e.printStackTrace();
         }
     }
 
     private void buildNotification() {
         //notification
-        Intent notificationIntent = new Intent(this, TrackList.class);
+        Intent notificationIntent;
+        if (stateRepository.isLargeScreen()) {
+            notificationIntent = new Intent(this, MainActivity.class);
+        } else {
+            notificationIntent = new Intent(this, TrackList.class);
+        }
         PendingIntent pendInt = PendingIntent.getActivity(
                 this,
                 0,
@@ -207,6 +229,7 @@ public class SpotifyStreamerMediaPlayerService extends Service implements
         builder.setContentIntent(pendInt)
                 .setSmallIcon(android.R.drawable.ic_media_play)
                 .setTicker(currentTrack.name)
+                .setAutoCancel(true)
                 .setOngoing(true)
                 .setContentTitle("Playing")
                 .setContentText(currentTrack.name);
