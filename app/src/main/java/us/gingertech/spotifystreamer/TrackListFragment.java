@@ -1,11 +1,17 @@
 package us.gingertech.spotifystreamer;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -22,6 +28,7 @@ import us.gingertech.spotifystreamer.domain.TracksDomain;
 import us.gingertech.spotifystreamer.repository.ArtistsRepository;
 import us.gingertech.spotifystreamer.repository.StateRepository;
 import us.gingertech.spotifystreamer.repository.TracksRepository;
+import us.gingertech.spotifystreamer.spotify.api.MediaPlayerFragmentListener;
 import us.gingertech.spotifystreamer.spotify.api.adapter.TracksAdapter;
 import us.gingertech.spotifystreamer.spotify.api.task.FetchArtistsTopTracksAsyncTask;
 import us.gingertech.spotifystreamer.spotify.api.task.IOnTaskCompleted;
@@ -41,6 +48,8 @@ public class TrackListFragment extends Fragment implements
     protected ArtistsDomain artistsDomain;
     protected TracksDomain tracksDomain;
     protected StateRepository stateRepository;
+    MediaPlayerFragment mediaPlayerFragment;
+    public MenuItem nowPlayMenuItem;
 
     @Bind(R.id.list_view_tracks)
     protected ListView lvTracks;
@@ -71,25 +80,49 @@ public class TrackListFragment extends Fragment implements
         View rootView = inflater.inflate(R.layout.fragment_track_list, null);
         ButterKnife.bind(this, rootView);
 
-        if (artistsRepository.getCurrentArtistId() == null
-            || !artistsRepository.getSelectedArtistId().equalsIgnoreCase(artistsRepository.getCurrentArtistId())
+        Intent intent = getActivity().getIntent();
+        String selectedArtistId = null;
+        if (intent.hasExtra("selectedArtistsId")) {
+            selectedArtistId = intent.getStringExtra("selectedArtistId");
+        }
+        String selectedArtistsName = null;
+        if (intent.hasExtra("selectedArtistsName")) {
+            selectedArtistsName = intent.getStringExtra("selectedArtistsName");
+        }
+        if (artistsRepository.getSelectedArtistId() == null
+            || selectedArtistId != null
+            && !selectedArtistId.equals(artistsRepository.getSelectedArtistsName())
         ) {
+            artistsDomain.saveArtistsId(selectedArtistId);
+            artistsDomain.saveSelectedArtistsName(selectedArtistsName);
             getTopTracks();
         } else {
             build();
         }
 
-        if (playerService.isPrepared) {
-            Runnable run = new Runnable() {
-                @Override
-                public void run() {
-                    renderMediaPlayer();
-                }
-            };
-            new Handler().postDelayed(run, 1000);
-        }
-
         return rootView;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        setDefaultActionBar();
+        if (playerService.isPrepared) {
+            setHasOptionsMenu(true);
+        }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        nowPlayMenuItem = menu.add("Now Playing");
+        nowPlayMenuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                renderMediaPlayer();
+                return true;
+            }
+        });
     }
 
     /**
@@ -116,18 +149,26 @@ public class TrackListFragment extends Fragment implements
     }
 
     private void renderMediaPlayer() {
-        MediaPlayerFragment mediaPlayerFragment = new MediaPlayerFragment();
+        if (mediaPlayerFragment != null) {
+            mediaPlayerFragment.dismiss();
+        }
+        mediaPlayerFragment = new MediaPlayerFragment();
+        mediaPlayerFragment.setMediaPlayerFragmentListener(new MediaPlayerFragmentListener() {
+            @Override
+            public void onDismiss() {
+                onStart();
+            }
+        });
         if (stateRepository.isLargeScreen()) {
             mediaPlayerFragment.show(getActivity().getSupportFragmentManager(), "Dialog");
-        } else {
-            FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
-            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
-            transaction.add(R.id.top_tracks_container, mediaPlayerFragment)
-                    .addToBackStack(null)
-                    .commit();
-            getActivity().setTitle("Now Playing");
+            return;
         }
-
+        FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+        transaction.add(R.id.top_tracks_container, mediaPlayerFragment)
+                .addToBackStack(null)
+                .commit();
+        setActionBar("Now Playing", artistsRepository.getSelectedArtistsName());
     }
 
     private void build() {
@@ -136,12 +177,28 @@ public class TrackListFragment extends Fragment implements
         if (getActivity() == null) {
             return;
         }
-
         lvTracks.setOnItemClickListener(this);
         lvTracks.setAdapter(new TracksAdapter(getActivity(), tracksRepository.getTracks()));
     }
 
     private void getTopTracks() {
         new FetchArtistsTopTracksAsyncTask(this).execute(artistsRepository.getSelectedArtistId());
+    }
+
+    public void setDefaultActionBar() {
+        setActionBar("Top 10 Tracks", artistsRepository.getSelectedArtistsName());
+    }
+
+    public void setActionBar(@NonNull String title, @NonNull String subtitle) {
+        AppCompatActivity activity = (AppCompatActivity)getActivity();
+        if (activity == null) {
+            return;
+        }
+        ActionBar actionBar = activity.getSupportActionBar();
+        if (actionBar == null) {
+            return;
+        }
+        actionBar.setTitle(title);
+        actionBar.setSubtitle(subtitle);
     }
 }

@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,7 +25,9 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import kaaes.spotify.webapi.android.models.ArtistSimple;
 import kaaes.spotify.webapi.android.models.Image;
+import us.gingertech.spotifystreamer.repository.ArtistsRepository;
 import us.gingertech.spotifystreamer.repository.TracksRepository;
+import us.gingertech.spotifystreamer.spotify.api.MediaPlayerFragmentListener;
 
 
 public class MediaPlayerFragment extends DialogFragment implements
@@ -32,7 +36,10 @@ public class MediaPlayerFragment extends DialogFragment implements
 {
     private SpotifyStreamerMediaPlayerService playerService;
     private TracksRepository tracksRepository;
+    private ArtistsRepository artistsRepository;
     private Resources res;
+    private MediaPlayerFragmentListener mediaPlayerFragmentListener;
+    private boolean wasSeekButtonPressed = false;
 
     @Bind(R.id.media_album_imageview)
     public ImageView ivAlbum;
@@ -65,6 +72,7 @@ public class MediaPlayerFragment extends DialogFragment implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         tracksRepository = new TracksRepository(getActivity());
+        artistsRepository = new ArtistsRepository(getActivity());
         SpotifyStreamerApplication application = (SpotifyStreamerApplication) getActivity().getApplication();
         playerService = application.getPlayerService();
         playerService.setFragmentListener(this);
@@ -80,8 +88,7 @@ public class MediaPlayerFragment extends DialogFragment implements
     ) {
         View rootView = inflater.inflate(R.layout.fragment_media_player, null);
         ButterKnife.bind(this, rootView);
-        if (
-            !playerService.isPrepared
+        if (!playerService.isPrepared
             || playerService.currentTrackPlayingPosition != tracksRepository.getCurrentTrackPosition()
         ) {
             playerService.start();
@@ -93,19 +100,19 @@ public class MediaPlayerFragment extends DialogFragment implements
         return rootView;
     }
 
-
-    @Override
-    public void onStart() {
-        super.onStart();
-    }
-
     @OnClick(R.id.ic_media_next)
     public void playNextTrack() {
+        wasSeekButtonPressed = true;
+        ivNextTrack.setEnabled(false);
+        ivPrevTrack.setEnabled(false);
         playerService.playNextTrack();
     }
 
     @OnClick(R.id.ic_prev_track)
     public void playPrevTrack() {
+        wasSeekButtonPressed = true;
+        ivNextTrack.setEnabled(false);
+        ivPrevTrack.setEnabled(false);
         playerService.playPrevTrack();
     }
 
@@ -120,12 +127,6 @@ public class MediaPlayerFragment extends DialogFragment implements
         // Otherwise play it.
         playerService.play();
         initView();
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        getActivity().setTitle(getString(R.string.top_tracks_title));
     }
 
     /**
@@ -161,7 +162,18 @@ public class MediaPlayerFragment extends DialogFragment implements
     @Override
     public void onPrepared() {
         playCurrentClick();
-        initView();
+    }
+
+    @Override
+    public void onDismiss(DialogInterface dialog) {
+        mediaPlayerFragmentListener.onDismiss();
+        super.onDismiss(dialog);
+    }
+
+    @Override
+    public void onDestroyView() {
+        mediaPlayerFragmentListener.onDismiss();
+        super.onDestroyView();
     }
 
     @Override
@@ -217,26 +229,42 @@ public class MediaPlayerFragment extends DialogFragment implements
         // Display Current track playing.
         tvCurrentTrack.setText(playerService.getCurrentTrack().name);
 
-        if (playerService.isPlaying()) {
-            ivPlay.setImageDrawable(res.getDrawable(android.R.drawable.ic_media_pause));
+
+        // Determine whether or not to enable the buttons.
+        boolean enableNextTrackButton = true;
+        boolean enablePrevTrackButton = true;
+
+        if (wasSeekButtonPressed) {
+            enableNextTrackButton = true;
+            enablePrevTrackButton = true;
         }
 
         if (!playerService.hasNextTrack()) {
-            ivNextTrack.setEnabled(false);
+            enableNextTrackButton = false;
         }
 
+
         if (!playerService.hasPrevTrack()) {
-            ivPrevTrack.setEnabled(false);
+            enablePrevTrackButton = false;
+        }
+
+        ivNextTrack.setEnabled(enableNextTrackButton);
+        ivPrevTrack.setEnabled(enablePrevTrackButton);
+
+        // Display the proper symbol if the a track is playing or not.
+        if (playerService.isPlaying()) {
+            ivPlay.setImageDrawable(res.getDrawable(android.R.drawable.ic_media_pause));
         }
 
         if (!playerService.isPlaying()) {
             ivPlay.setImageDrawable(res.getDrawable(android.R.drawable.ic_media_play));
         }
 
+        // Update the seekbar.
         seekBarUpdate();
     }
 
-    private String humanReadableTime(int milliseconds) {
+    protected String humanReadableTime(int milliseconds) {
         long minutes = TimeUnit.MILLISECONDS.toMinutes(milliseconds) % TimeUnit.HOURS.toMinutes(1);
         long seconds = TimeUnit.MILLISECONDS.toSeconds(milliseconds) % TimeUnit.MINUTES.toSeconds(1);
 
@@ -246,5 +274,9 @@ public class MediaPlayerFragment extends DialogFragment implements
             sbCurrent.setProgress(0);
         }
         return String.format("%02d:%02d", minutes, seconds);
+    }
+
+    public void setMediaPlayerFragmentListener(MediaPlayerFragmentListener mediaPlayerFragmentListener) {
+        this.mediaPlayerFragmentListener = mediaPlayerFragmentListener;
     }
 }

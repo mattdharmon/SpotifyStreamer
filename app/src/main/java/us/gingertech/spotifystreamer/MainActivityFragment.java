@@ -44,7 +44,6 @@ public class MainActivityFragment extends Fragment implements
     private ArtistsRepository artistsRepository;
     private StateDomain stateDomain;
     private StateRepository stateRepository;
-    private TracksDomain tracksDomain;
 
     @Bind(R.id.list_view_search)
     protected ListView lvArtists;
@@ -63,7 +62,6 @@ public class MainActivityFragment extends Fragment implements
         artistsRepository = new ArtistsRepository(getActivity());
         stateDomain = new StateDomain(getActivity());
         stateRepository = new StateRepository(getActivity());
-        tracksDomain = new TracksDomain(getActivity());
         setRetainInstance(true);
     }
 
@@ -126,7 +124,7 @@ public class MainActivityFragment extends Fragment implements
     @Override
     public void onItemClick(@NonNull AdapterView<?> parent, @NonNull View view, int position, long id) {
         // Save an http call by comparing the old artistId with the new.
-        artistsDomain.saveArtistsId((String) view.getTag());
+        String artistsName = artistsRepository.getArtistsSearchResults().get(position).name;
         if (currentSelection == view) {
             return;
         }
@@ -136,11 +134,11 @@ public class MainActivityFragment extends Fragment implements
 
         // Render the large view layout.
         if (stateRepository.isLargeScreen()) {
-            renderLargeViewTrackList();
+            renderLargeViewTrackList((String)view.getTag(), artistsName);
             return;
         }
 
-        startTrackListActivity();
+        startTrackListActivity((String)view.getTag(), artistsName);
     }
 
     @OnTextChanged(R.id.edittext_artist_search)
@@ -169,17 +167,23 @@ public class MainActivityFragment extends Fragment implements
         currentSelection = view;
     }
 
-    private void renderLargeViewTrackList() {
+    private void renderLargeViewTrackList(String artistsId, String artistsName) {
         TrackListFragment trackListFragment = new TrackListFragment();
+        Intent intent = new Intent(getActivity(), MainActivity.class);
+        intent.putExtra("selectedArtistId", artistsId);
+        intent.putExtra("selectedArtistsName", artistsName);
+        getActivity().setIntent(intent);
         getFragmentManager()
             .beginTransaction()
             .replace(R.id.top_tracks_container, trackListFragment)
             .commit();
     }
 
-    private void startTrackListActivity() {
+    private void startTrackListActivity(String artistsId, String artistsName) {
         // Save the top ten tracks to the snappy.
         Intent intent = new Intent(getActivity(), TrackList.class);
+        intent.putExtra("selectedArtistId", artistsId);
+        intent.putExtra("selectedArtistsName", artistsName);
         startActivity(intent);
     }
 }

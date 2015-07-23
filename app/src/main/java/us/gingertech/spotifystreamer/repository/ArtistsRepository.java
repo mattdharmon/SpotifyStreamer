@@ -51,6 +51,20 @@ public class ArtistsRepository extends Repository {
         return results;
     }
 
+    public String getSelectedArtistsName() {
+        String results = null;
+        try {
+            openDatabase(DATABASE_NAME);
+            results = snappyDB.get(getContext().getString(R.string.db_current_artists_name));
+        } catch (SnappydbException e) {
+            Logger.e(e, "Error in saving the selected artist's name.");
+            e.printStackTrace();
+        } finally {
+            closeDatabase();
+        }
+        return results;
+    }
+
     public String getArtistsSearchQuery() {
         String results = null;
         try {

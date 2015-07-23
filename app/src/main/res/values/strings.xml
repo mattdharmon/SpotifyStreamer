@@ -16,4 +16,5 @@
     <string name="db_is_large_screen">isLargeScreen</string>
     <string name="db_cached_tracks">cachedTracks</string>
     <string name="db_current_track_pos">currentTrackPos</string>
+    <string name="db_current_artists_name">selectedArtistsName</string>
 </resources>

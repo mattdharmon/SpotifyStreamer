@@ -44,6 +44,18 @@ public class ArtistsDomain extends Domain {
         }
     }
 
+    public void saveSelectedArtistsName(String artistsName) {
+        try {
+            openDatabase(DATABASE_NAME);
+            snappyDB.put(getContext().getString(R.string.db_current_artists_name), artistsName);
+        } catch (SnappydbException e) {
+            Logger.e(e, "Error in saving the selected artist's name.");
+            e.printStackTrace();
+        } finally {
+            closeDatabase();
+        }
+    }
+
     public void saveArtistsSearchQuery(String query) {
         try {
             openDatabase(DATABASE_NAME);
