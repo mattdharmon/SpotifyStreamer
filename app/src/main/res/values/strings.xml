@@ -8,6 +8,12 @@
     <string name="play_current">play</string>
     <string name="play_next_track">Play next track</string>
 
-<!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="top_tracks_title">Top 10 Tracks</string>
+    <string name="db_search_query">searchQuery</string>
+    <string name="db_artist_search_results">searchResults</string>
+    <string name="db_current_artist_id">currentArtistsId</string>
+    <string name="db_selected_artist_id">artistsId</string>
+    <string name="db_is_large_screen">isLargeScreen</string>
+    <string name="db_cached_tracks">cachedTracks</string>
+    <string name="db_current_track_pos">currentTrackPos</string>
 </resources>

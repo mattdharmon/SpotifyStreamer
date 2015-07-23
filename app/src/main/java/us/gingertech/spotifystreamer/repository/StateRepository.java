@@ -5,6 +5,8 @@ import android.content.Context;
 import com.orhanobut.logger.Logger;
 import com.snappydb.SnappydbException;
 
+import us.gingertech.spotifystreamer.R;
+
 /**
  * Created by Matthew Harmon on 7/22/15.
  */
@@ -19,7 +21,7 @@ public class StateRepository extends Repository{
         boolean results = false;
         try {
             openDatabase(DATABASE_NAME);
-            results = snappyDB.getBoolean("isLargeScreen");
+            results = snappyDB.getBoolean(getContext().getString(R.string.db_is_large_screen));
         } catch (SnappydbException e) {
             Logger.e(e, "Failure to retrieve state.");
             e.printStackTrace();

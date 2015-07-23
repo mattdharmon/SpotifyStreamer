@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import kaaes.spotify.webapi.android.models.Track;
+import us.gingertech.spotifystreamer.R;
 
 /**
  * The Track Repository class for retrieving data from SnappyDB
@@ -26,7 +27,7 @@ public class TracksRepository extends Repository {
         int results = 0;
         try {
             openDatabase(DATABASE_NAME);
-            results = snappyDB.getInt("currentTrackPos");
+            results = snappyDB.getInt(getContext().getString(R.string.db_current_track_pos));
         } catch (SnappydbException e) {
             Logger.e(e, "Get Current track Position.");
             e.printStackTrace();
@@ -77,7 +78,10 @@ public class TracksRepository extends Repository {
         ArrayList<Track> results = null;
         try {
             openDatabase(DATABASE_NAME);
-            Track[] tracks = snappyDB.getObjectArray("cachedTracks", Track.class);
+            Track[] tracks = snappyDB.getObjectArray(
+                    getContext().getString(R.string.db_cached_tracks),
+                    Track.class
+            );
             results = new ArrayList<>(Arrays.asList(tracks));
         } catch (SnappydbException e) {
             Logger.e(e, "Get an array list of tracks.");

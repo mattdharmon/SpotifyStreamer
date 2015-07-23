@@ -15,11 +15,13 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import kaaes.spotify.webapi.android.models.ArtistSimple;
 import kaaes.spotify.webapi.android.models.Image;
 import us.gingertech.spotifystreamer.repository.TracksRepository;
 
@@ -31,8 +33,6 @@ public class MediaPlayerFragment extends DialogFragment implements
     private SpotifyStreamerMediaPlayerService playerService;
     private TracksRepository tracksRepository;
     private Resources res;
-    private boolean isSeeking = false;
-    private Handler handler;
 
     @Bind(R.id.media_album_imageview)
     public ImageView ivAlbum;
@@ -54,6 +54,12 @@ public class MediaPlayerFragment extends DialogFragment implements
 
     @Bind(R.id.track_length)
     public TextView totalTime;
+
+    @Bind(R.id.current_artist_textview)
+    public TextView tvCurrentArtist;
+
+    @Bind(R.id.current_track_textview)
+    public TextView tvCurrentTrack;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -87,6 +93,7 @@ public class MediaPlayerFragment extends DialogFragment implements
         return rootView;
     }
 
+
     @Override
     public void onStart() {
         super.onStart();
@@ -116,8 +123,9 @@ public class MediaPlayerFragment extends DialogFragment implements
     }
 
     @Override
-    public void onDismiss(DialogInterface dialog) {
-        super.onDismiss(dialog);
+    public void onDestroyView() {
+        super.onDestroyView();
+        getActivity().setTitle(getString(R.string.top_tracks_title));
     }
 
     /**
@@ -128,36 +136,26 @@ public class MediaPlayerFragment extends DialogFragment implements
             return;
         }
 
-        if (isSeeking) {
-            return;
-        }
-
         sbCurrent.setMax(playerService.getDuration());
-        long minutes = TimeUnit.MILLISECONDS.toMinutes(playerService.getCurrentPosition()) % TimeUnit.HOURS.toMinutes(1);
-        long seconds = TimeUnit.MILLISECONDS.toSeconds(playerService.getCurrentPosition()) % TimeUnit.MINUTES.toSeconds(1);
-        if (playerService.getCurrentPosition() < 0) {
-            minutes = 0;
-            seconds = 0;
-            sbCurrent.setProgress(0);
-        } else {
-            sbCurrent.setProgress(playerService.getCurrentPosition());
-        }
+        sbCurrent.setProgress(playerService.getCurrentPosition());
 
         if (!sbCurrent.isEnabled()) {
             sbCurrent.setEnabled(true);
         }
 
-        String hms = String.format("%02d:%02d", minutes, seconds);
-        duration.setText(hms);
+        // Set the current progress to be displayed.
+        duration.setText(humanReadableTime(playerService.getCurrentPosition()));
 
-        handler = new Handler();
+        // Get the total duration of the song.
+        totalTime.setText(" - ".concat(humanReadableTime(playerService.getDuration())));
+
         Runnable run = new Runnable() {
             @Override
             public void run() {
                 seekBarUpdate();
             }
         };
-        handler.postDelayed(run, 1000);
+        new Handler().postDelayed(run, 1000);
     }
 
     @Override
@@ -205,6 +203,20 @@ public class MediaPlayerFragment extends DialogFragment implements
                 .resize(image.width, image.height)
                 .into(ivAlbum);
 
+        // Get all the artists names to be displayed.
+        List<ArtistSimple> artists = playerService.getCurrentTrack().artists;
+        StringBuilder names = new StringBuilder();
+        for (ArtistSimple artist : artists) {
+            if (names.length() > 0) {
+                names.append(", ");
+            }
+            names.append(artist.name);
+        }
+        tvCurrentArtist.setText(names.toString());
+
+        // Display Current track playing.
+        tvCurrentTrack.setText(playerService.getCurrentTrack().name);
+
         if (playerService.isPlaying()) {
             ivPlay.setImageDrawable(res.getDrawable(android.R.drawable.ic_media_pause));
         }
@@ -222,5 +234,17 @@ public class MediaPlayerFragment extends DialogFragment implements
         }
 
         seekBarUpdate();
+    }
+
+    private String humanReadableTime(int milliseconds) {
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(milliseconds) % TimeUnit.HOURS.toMinutes(1);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(milliseconds) % TimeUnit.MINUTES.toSeconds(1);
+
+        if (milliseconds < 0) {
+            minutes = 0;
+            seconds = 0;
+            sbCurrent.setProgress(0);
+        }
+        return String.format("%02d:%02d", minutes, seconds);
     }
 }

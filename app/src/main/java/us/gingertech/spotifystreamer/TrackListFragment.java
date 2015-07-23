@@ -92,26 +92,6 @@ public class TrackListFragment extends Fragment implements
         return rootView;
     }
 
-    @Override
-    public void onViewStateRestored(Bundle savedInstanceState) {
-        super.onViewStateRestored(savedInstanceState);
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-    }
-
     /**
      * Needed to handle the information received from the spotify async task.
      */
@@ -145,6 +125,7 @@ public class TrackListFragment extends Fragment implements
             transaction.add(R.id.top_tracks_container, mediaPlayerFragment)
                     .addToBackStack(null)
                     .commit();
+            getActivity().setTitle("Now Playing");
         }
 
     }

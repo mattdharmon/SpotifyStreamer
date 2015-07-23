@@ -5,6 +5,8 @@ import android.content.Context;
 import com.orhanobut.logger.Logger;
 import com.snappydb.SnappydbException;
 
+import us.gingertech.spotifystreamer.R;
+
 /**
  * Created by Matthew Harmon on 7/22/15.
  */
@@ -15,15 +17,10 @@ public class StateDomain extends Domain{
         super(context);
     }
 
-
-    public void isLargeScreen() {
-        isLargeScreen(true);
-    }
-
     public void isLargeScreen(boolean isLargeScreen) {
         try {
             openDatabase(DATABASE_NAME);
-            snappyDB.putBoolean("isLargeScreen", isLargeScreen);
+            snappyDB.putBoolean(getContext().getString(R.string.db_is_large_screen), isLargeScreen);
             closeDatabase();
         } catch (SnappydbException e) {
             Logger.e(e, "Failure to save screen size.");

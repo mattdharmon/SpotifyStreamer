@@ -8,6 +8,7 @@ import com.snappydb.SnappydbException;
 import java.util.ArrayList;
 
 import kaaes.spotify.webapi.android.models.Track;
+import us.gingertech.spotifystreamer.R;
 
 /**
  * Track Domain class for saving data to SnappyDB.
@@ -24,7 +25,7 @@ public class TracksDomain extends Domain {
     public void saveCurrentTrackPosition(int currentTrackPosition) {
         try {
             openDatabase(DATABASE_NAME);
-            snappyDB.putInt("currentTrackPos", currentTrackPosition);
+            snappyDB.putInt(getContext().getString(R.string.db_current_track_pos), currentTrackPosition);
         } catch (SnappydbException e) {
             Logger.e(e, "Error in saving current track position.");
             e.printStackTrace();
@@ -51,7 +52,7 @@ public class TracksDomain extends Domain {
 
         try {
             openDatabase(DATABASE_NAME);
-            snappyDB.put("cachedTracks", tracks.toArray());
+            snappyDB.put(getContext().getString(R.string.db_cached_tracks), tracks.toArray());
         } catch (SnappydbException e) {
             Logger.e(e, "Error in saving top tracks.");
             e.printStackTrace();
