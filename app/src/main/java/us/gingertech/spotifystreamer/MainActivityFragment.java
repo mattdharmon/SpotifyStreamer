@@ -169,10 +169,8 @@ public class MainActivityFragment extends Fragment implements
 
     private void renderLargeViewTrackList(String artistsId, String artistsName) {
         TrackListFragment trackListFragment = new TrackListFragment();
-        Intent intent = new Intent(getActivity(), MainActivity.class);
-        intent.putExtra("selectedArtistId", artistsId);
-        intent.putExtra("selectedArtistsName", artistsName);
-        getActivity().setIntent(intent);
+        trackListFragment.selectedArtistId = artistsId;
+        trackListFragment.selectedArtistsName = artistsName;
         getFragmentManager()
             .beginTransaction()
             .replace(R.id.top_tracks_container, trackListFragment)

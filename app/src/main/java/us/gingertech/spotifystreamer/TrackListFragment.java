@@ -48,8 +48,10 @@ public class TrackListFragment extends Fragment implements
     protected ArtistsDomain artistsDomain;
     protected TracksDomain tracksDomain;
     protected StateRepository stateRepository;
-    MediaPlayerFragment mediaPlayerFragment;
+    public MediaPlayerFragment mediaPlayerFragment;
     public MenuItem nowPlayMenuItem;
+    public String selectedArtistId = null;
+    public String selectedArtistsName = null;
 
     @Bind(R.id.list_view_tracks)
     protected ListView lvTracks;
@@ -68,6 +70,21 @@ public class TrackListFragment extends Fragment implements
         artistsDomain = new ArtistsDomain(getActivity());
         stateRepository = new StateRepository(getActivity());
         setRetainInstance(true);
+        Intent intent = getActivity().getIntent();
+        if (intent.hasExtra("selectedArtistsId")) {
+            selectedArtistId = intent.getStringExtra("selectedArtistId");
+        }
+        if (intent.hasExtra("selectedArtistsName")) {
+            selectedArtistsName = intent.getStringExtra("selectedArtistsName");
+        }
+        if (artistsRepository.getSelectedArtistId() == null
+                || selectedArtistId != null
+                && !selectedArtistId.equals(artistsRepository.getSelectedArtistsName())
+                ) {
+            artistsDomain.saveArtistsId(selectedArtistId);
+            artistsDomain.saveSelectedArtistsName(selectedArtistsName);
+            getTopTracks();
+        }
     }
 
     @Override
@@ -80,23 +97,7 @@ public class TrackListFragment extends Fragment implements
         View rootView = inflater.inflate(R.layout.fragment_track_list, null);
         ButterKnife.bind(this, rootView);
 
-        Intent intent = getActivity().getIntent();
-        String selectedArtistId = null;
-        if (intent.hasExtra("selectedArtistsId")) {
-            selectedArtistId = intent.getStringExtra("selectedArtistId");
-        }
-        String selectedArtistsName = null;
-        if (intent.hasExtra("selectedArtistsName")) {
-            selectedArtistsName = intent.getStringExtra("selectedArtistsName");
-        }
-        if (artistsRepository.getSelectedArtistId() == null
-            || selectedArtistId != null
-            && !selectedArtistId.equals(artistsRepository.getSelectedArtistsName())
-        ) {
-            artistsDomain.saveArtistsId(selectedArtistId);
-            artistsDomain.saveSelectedArtistsName(selectedArtistsName);
-            getTopTracks();
-        } else {
+        if (savedInstanceState != null) {
             build();
         }
 

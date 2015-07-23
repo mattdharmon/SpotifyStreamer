@@ -124,6 +124,9 @@ public class SpotifyStreamerMediaPlayerService extends Service implements
      * Starts the MediaPlayer and changes the icon to the pause icon.
      */
     public void play() {
+        if (isPlaying()) {
+            mediaPlayer.stop();
+        }
         mediaPlayer.start();
         buildNotification();
     }
