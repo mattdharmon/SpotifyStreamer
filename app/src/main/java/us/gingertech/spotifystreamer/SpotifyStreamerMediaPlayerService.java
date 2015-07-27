@@ -196,9 +196,7 @@ public class SpotifyStreamerMediaPlayerService extends Service implements
      */
     private void prepareTrack() {
         try {
-            if (isPlaying()) {
-                softKill();
-            }
+            softKill();
             // Get the current track
             currentTrack = tracksRepository.getTrack(tracksRepository.getCurrentTrackPosition());
             Logger.d(currentTrack.name);

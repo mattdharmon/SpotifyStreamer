@@ -18,6 +18,8 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.orhanobut.logger.Logger;
+
 import java.util.ArrayList;
 
 import butterknife.Bind;
@@ -70,21 +72,6 @@ public class TrackListFragment extends Fragment implements
         artistsDomain = new ArtistsDomain(getActivity());
         stateRepository = new StateRepository(getActivity());
         setRetainInstance(true);
-        Intent intent = getActivity().getIntent();
-        if (intent.hasExtra("selectedArtistsId")) {
-            selectedArtistId = intent.getStringExtra("selectedArtistId");
-        }
-        if (intent.hasExtra("selectedArtistsName")) {
-            selectedArtistsName = intent.getStringExtra("selectedArtistsName");
-        }
-        if (artistsRepository.getSelectedArtistId() == null
-                || selectedArtistId != null
-                && !selectedArtistId.equals(artistsRepository.getSelectedArtistsName())
-                ) {
-            artistsDomain.saveArtistsId(selectedArtistId);
-            artistsDomain.saveSelectedArtistsName(selectedArtistsName);
-            getTopTracks();
-        }
     }
 
     @Override
@@ -97,9 +84,22 @@ public class TrackListFragment extends Fragment implements
         View rootView = inflater.inflate(R.layout.fragment_track_list, null);
         ButterKnife.bind(this, rootView);
 
-        if (savedInstanceState != null) {
+        Intent intent = getActivity().getIntent();
+        if (intent.hasExtra("selectedArtistId")) {
+            selectedArtistId = intent.getStringExtra("selectedArtistId");
+        }
+        if (intent.hasExtra("selectedArtistsName")) {
+            selectedArtistsName = intent.getStringExtra("selectedArtistsName");
+        }
+
+        if (needsToFetchTracksFromSpotify()) {
+            artistsDomain.saveArtistsId(selectedArtistId);
+            artistsDomain.saveSelectedArtistsName(selectedArtistsName);
+            getTopTracks();
+        } else {
             build();
         }
+
 
         return rootView;
     }
@@ -108,7 +108,11 @@ public class TrackListFragment extends Fragment implements
     public void onStart() {
         super.onStart();
         setDefaultActionBar();
+        if (!lvTracks.isEnabled()) {
+            lvTracks.setEnabled(true);
+        }
         if (playerService.isPrepared) {
+            lvTracks.setEnabled(true);
             setHasOptionsMenu(true);
         }
     }
@@ -146,6 +150,7 @@ public class TrackListFragment extends Fragment implements
         tracksDomain.saveTopTracks(tracksRepository.getTracks());
         artistsDomain.saveCurrentPlayingArtist(artistsRepository.getSelectedArtistId());
         tracksDomain.saveCurrentTrackPosition(position);
+        lvTracks.setEnabled(false);
         renderMediaPlayer();
     }
 
@@ -153,11 +158,16 @@ public class TrackListFragment extends Fragment implements
         if (mediaPlayerFragment != null) {
             mediaPlayerFragment.dismiss();
         }
+        setActionBar("Now Playing", artistsRepository.getSelectedArtistsName());
         mediaPlayerFragment = new MediaPlayerFragment();
         mediaPlayerFragment.setMediaPlayerFragmentListener(new MediaPlayerFragmentListener() {
             @Override
             public void onDismiss() {
-                onStart();
+                setDefaultActionBar();
+                if (playerService.isPrepared) {
+                    lvTracks.setEnabled(true);
+                    setHasOptionsMenu(true);
+                }
             }
         });
         if (stateRepository.isLargeScreen()) {
@@ -169,7 +179,6 @@ public class TrackListFragment extends Fragment implements
         transaction.add(R.id.top_tracks_container, mediaPlayerFragment)
                 .addToBackStack(null)
                 .commit();
-        setActionBar("Now Playing", artistsRepository.getSelectedArtistsName());
     }
 
     private void build() {
@@ -201,5 +210,19 @@ public class TrackListFragment extends Fragment implements
         }
         actionBar.setTitle(title);
         actionBar.setSubtitle(subtitle);
+    }
+
+    private boolean needsToFetchTracksFromSpotify() {
+        boolean results = false;
+        if (artistsRepository.getSelectedArtistId() == null) {
+            results = true;
+        }
+
+        if (selectedArtistId != null
+                && !selectedArtistId.equals(artistsRepository.getSelectedArtistId())
+        ) {
+            results = true;
+        }
+        return results;
     }
 }

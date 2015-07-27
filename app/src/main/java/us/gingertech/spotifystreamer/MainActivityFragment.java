@@ -125,13 +125,10 @@ public class MainActivityFragment extends Fragment implements
     public void onItemClick(@NonNull AdapterView<?> parent, @NonNull View view, int position, long id) {
         // Save an http call by comparing the old artistId with the new.
         String artistsName = artistsRepository.getArtistsSearchResults().get(position).name;
-        if (currentSelection == view) {
-            return;
+        if (currentSelection != view) {
+            // Update the selection colors.
+            setCurrentSelection(view);
         }
-
-        // Update the selection colors.
-        setCurrentSelection(view);
-
         // Render the large view layout.
         if (stateRepository.isLargeScreen()) {
             renderLargeViewTrackList((String)view.getTag(), artistsName);

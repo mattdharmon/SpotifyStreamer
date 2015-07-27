@@ -6,8 +6,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,7 +34,6 @@ public class MediaPlayerFragment extends DialogFragment implements
 {
     private SpotifyStreamerMediaPlayerService playerService;
     private TracksRepository tracksRepository;
-    private ArtistsRepository artistsRepository;
     private Resources res;
     private MediaPlayerFragmentListener mediaPlayerFragmentListener;
     private boolean wasSeekButtonPressed = false;
@@ -72,7 +69,6 @@ public class MediaPlayerFragment extends DialogFragment implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         tracksRepository = new TracksRepository(getActivity());
-        artistsRepository = new ArtistsRepository(getActivity());
         SpotifyStreamerApplication application = (SpotifyStreamerApplication) getActivity().getApplication();
         playerService = application.getPlayerService();
         playerService.setFragmentListener(this);
@@ -88,6 +84,7 @@ public class MediaPlayerFragment extends DialogFragment implements
     ) {
         View rootView = inflater.inflate(R.layout.fragment_media_player, null);
         ButterKnife.bind(this, rootView);
+        setAllowEnterTransitionOverlap(false);
         if (!playerService.isPrepared
             || playerService.currentTrackPlayingPosition != tracksRepository.getCurrentTrackPosition()
         ) {
@@ -166,14 +163,20 @@ public class MediaPlayerFragment extends DialogFragment implements
 
     @Override
     public void onDismiss(DialogInterface dialog) {
-        mediaPlayerFragmentListener.onDismiss();
         super.onDismiss(dialog);
+        mediaPlayerFragmentListener.onDismiss();
     }
 
     @Override
     public void onDestroyView() {
-        mediaPlayerFragmentListener.onDismiss();
         super.onDestroyView();
+        mediaPlayerFragmentListener.onDismiss();
+    }
+
+    @Override
+    public void onCancel(DialogInterface dialog) {
+        super.onCancel(dialog);
+        mediaPlayerFragmentListener.onDismiss();
     }
 
     @Override
