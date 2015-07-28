@@ -1,7 +1,6 @@
 package us.gingertech.spotifystreamer.spotify.api.task;
 
 import android.os.AsyncTask;
-import android.util.Log;
 
 import com.orhanobut.logger.Logger;
 

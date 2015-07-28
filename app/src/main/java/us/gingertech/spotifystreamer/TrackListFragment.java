@@ -2,7 +2,6 @@ package us.gingertech.spotifystreamer;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -17,8 +16,6 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
-
-import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
 
@@ -123,7 +120,7 @@ public class TrackListFragment extends Fragment implements
         nowPlayMenuItem = menu.add("Now Playing");
         nowPlayMenuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
-            public boolean onMenuItemClick(MenuItem item) {
+            public boolean onMenuItemClick(@NonNull MenuItem item) {
                 renderMediaPlayer();
                 return true;
             }
@@ -150,7 +147,7 @@ public class TrackListFragment extends Fragment implements
         tracksDomain.saveTopTracks(tracksRepository.getTracks());
         artistsDomain.saveCurrentPlayingArtist(artistsRepository.getSelectedArtistId());
         tracksDomain.saveCurrentTrackPosition(position);
-        lvTracks.setEnabled(false);
+        lvTracks.setEnabled(false); // prevents click through of the dialog fragment.
         renderMediaPlayer();
     }
 
@@ -164,8 +161,8 @@ public class TrackListFragment extends Fragment implements
             @Override
             public void onDismiss() {
                 setDefaultActionBar();
+                lvTracks.setEnabled(true); // When the dialog fragment is dismissed (et.al.) re-enable the clicking.
                 if (playerService.isPrepared) {
-                    lvTracks.setEnabled(true);
                     setHasOptionsMenu(true);
                 }
             }
