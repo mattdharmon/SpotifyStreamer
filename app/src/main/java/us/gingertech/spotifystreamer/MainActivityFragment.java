@@ -42,6 +42,7 @@ public class MainActivityFragment extends Fragment implements
     private ArtistsRepository artistsRepository;
     private StateDomain stateDomain;
     private StateRepository stateRepository;
+    private TrackListFragment trackListFragment;
 
     @Bind(R.id.list_view_search)
     protected ListView lvArtists;
@@ -163,13 +164,19 @@ public class MainActivityFragment extends Fragment implements
     }
 
     private void renderLargeViewTrackList(String artistsId, String artistsName) {
-        TrackListFragment trackListFragment = new TrackListFragment();
+        if (trackListFragment == null) {
+            trackListFragment = new TrackListFragment();
+            trackListFragment.selectedArtistId = artistsId;
+            trackListFragment.selectedArtistsName = artistsName;
+            getFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.top_tracks_container, trackListFragment)
+                    .commit();
+            return;
+        }
         trackListFragment.selectedArtistId = artistsId;
         trackListFragment.selectedArtistsName = artistsName;
-        getFragmentManager()
-            .beginTransaction()
-            .replace(R.id.top_tracks_container, trackListFragment)
-            .commit();
+        trackListFragment.build();
     }
 
     private void startTrackListActivity(String artistsId, String artistsName) {

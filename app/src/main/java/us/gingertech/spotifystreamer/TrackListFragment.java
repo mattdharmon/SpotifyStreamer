@@ -17,6 +17,8 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.orhanobut.logger.Logger;
+
 import java.util.ArrayList;
 
 import butterknife.Bind;
@@ -89,14 +91,7 @@ public class TrackListFragment extends Fragment implements
             selectedArtistsName = intent.getStringExtra("selectedArtistsName");
         }
 
-        if (needsToFetchTracksFromSpotify()) {
-            artistsDomain.saveArtistsId(selectedArtistId);
-            artistsDomain.saveSelectedArtistsName(selectedArtistsName);
-            getTopTracks();
-        } else {
-            build();
-        }
-
+        build();
 
         return rootView;
     }
@@ -178,18 +173,21 @@ public class TrackListFragment extends Fragment implements
                 .commit();
     }
 
-    private void build() {
+    public void build() {
         // Prevent an error to make sure this activity is still active, since an
         // artist selection may recreate a fragment.
         if (getActivity() == null) {
+            Logger.e("No activity is found.");
+            return;
+        }
+        if (needsToFetchTracksFromSpotify()) {
+            artistsDomain.saveArtistsId(selectedArtistId);
+            artistsDomain.saveSelectedArtistsName(selectedArtistsName);
+            getTopTracks();
             return;
         }
         lvTracks.setOnItemClickListener(this);
         lvTracks.setAdapter(new TracksAdapter(getActivity(), tracksRepository.getTracks()));
-    }
-
-    private void getTopTracks() {
-        new FetchArtistsTopTracksAsyncTask(this).execute(artistsRepository.getSelectedArtistId());
     }
 
     public void setDefaultActionBar() {
@@ -207,6 +205,10 @@ public class TrackListFragment extends Fragment implements
         }
         actionBar.setTitle(title);
         actionBar.setSubtitle(subtitle);
+    }
+
+    private void getTopTracks() {
+        new FetchArtistsTopTracksAsyncTask(this).execute(artistsRepository.getSelectedArtistId());
     }
 
     private boolean needsToFetchTracksFromSpotify() {
